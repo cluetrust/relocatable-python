@@ -19,6 +19,8 @@
 from __future__ import print_function
 
 import optparse
+import os
+import subprocess
 
 from locallibs import get
 from locallibs.fix import fix_broken_signatures, fix_other_things
@@ -68,6 +70,11 @@ def main():
         help="Do not unsign binaries and libraries after they are relocatablized."
     )
     parser.set_defaults(unsign=True)
+    parser.add_option(
+        "--sign",
+        default=None,
+        help="Sign using the designated signing identity"
+    )
     options, _arguments = parser.parse_args()
 
     framework_path = get.FrameworkGetter(
@@ -90,6 +97,19 @@ def main():
             print()
             print("Done!")
             print("Customized, relocatable framework is at %s" % framework_path)
+    if options.sign:
+        sign_items = []
+        for root, directories, filenames in os.walk(os.path.join(options.destination,'Python.framework')):
+            for filename in filenames: 
+                if '.so' in filename or '.dylib' in filename:
+                    sign_items += [os.path.join(root,filename)]
+        sign_items += ['Python.framework']
+
+        command_parameters = ['/usr/bin/codesign', '--force', '-o', 'runtime', '--timestamp', '--sign',
+                               options.sign, '--preserve-metadata=identifier,entitlements,flags'] \
+                               + sign_items
+        sign_result = subprocess.check_output(command_parameters, stderr=subprocess.STDOUT)
+        print(sign_result.decode('utf-8'))
 
 
 if __name__ == "__main__":
