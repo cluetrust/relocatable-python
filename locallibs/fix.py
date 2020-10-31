@@ -23,6 +23,7 @@ import subprocess
 import sys
 
 
+import fileinput
 UNSIGN_TOOL = "/usr/bin/codesign"
 
 
@@ -119,12 +120,22 @@ def fix_script_shebangs(framework_path, short_version):
     return True
 
 
+def fix_pystate_include(framework_path):
+    '''Fixes an errant path in cpython/pystate.h that will cause errors when
+    including the file as a package'''
+    header_dir_path = os.path.join(framework_path, 'Headers')
+    header_path = os.path.join(header_dir_path, 'cpython','pystate.h')
+    with fileinput.FileInput(header_path, inplace=True) as file:
+        for line in file:
+            print(line.replace('cpython/initconfig.h', 'initconfig.h'), end='')
+
+
 def fix_other_things(framework_path, short_version):
     '''Wrapper function in case there are other things we need to fix in the
     future'''
     return (ensure_current_version_link(framework_path, short_version) and
-            fix_script_shebangs(framework_path, short_version))
-
+            fix_script_shebangs(framework_path, short_version) and
+            fix_pystate_include(framework_path))
 
 def fix_broken_signatures(files_relocatablized):
     """
