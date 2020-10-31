@@ -26,6 +26,13 @@ PYTHON2_EXTRA_PKGS = ["xattr==0.6.4", "pyobjc"]
 PYTHON3_EXTRA_PKGS = ["xattr", "pyobjc"]
 
 
+def python_cache():
+    """Ensure we have someplace to put the python cache hierarchy"""
+    temp_path = '/tmp/python_build'
+    os.makedirs(temp_path, exist_ok=True)
+    return temp_path
+
+
 def ensure_pip(framework_path, version):
     """Ensure pip is installed in our Python framework"""
     python_path = os.path.join(
@@ -36,7 +43,7 @@ def ensure_pip(framework_path, version):
         return
     cmd = [python_path, "-s", "-m", "ensurepip"]
     print("Ensuring pip is installed...")
-    subprocess.check_call(cmd)
+    subprocess.check_call(cmd, env={'PYTHONPYCACHEPREFIX': python_cache()})
 
 
 def install(pkgname, framework_path, version):
@@ -49,7 +56,7 @@ def install(pkgname, framework_path, version):
         return
     cmd = [python_path, "-s", "-m", "pip", "install", pkgname]
     print("Installing %s..." % pkgname)
-    subprocess.check_call(cmd)
+    subprocess.check_call(cmd, env={'PYTHONPYCACHEPREFIX': python_cache()})
 
 
 def install_requirements(requirements_file, framework_path, version):
@@ -62,7 +69,7 @@ def install_requirements(requirements_file, framework_path, version):
         return
     cmd = [python_path, "-s", "-m", "pip", "install", "-r", requirements_file]
     print("Installing modules from %s..." % requirements_file)
-    subprocess.check_call(cmd)
+    subprocess.check_call(cmd, env={'PYTHONPYCACHEPREFIX': python_cache()})
 
 
 def install_extras(framework_path, version="2.7", requirements_file=None):
